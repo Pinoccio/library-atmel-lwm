@@ -53,6 +53,7 @@
 /*- Definitions ------------------------------------------------------------*/
 #define IRQ_STATUS_CLEAR_VALUE         0xff
 #define RANDOM_NUMBER_UPDATE_INTERVAL  1 // us
+//#define PHY_ENABLE_ENERGY_DETECTION
 
 /*- Types ------------------------------------------------------------------*/
 typedef enum PhyState_t
@@ -99,7 +100,7 @@ typedef struct PhyIb_t
 /*- Prototypes -------------------------------------------------------------*/
 static inline void phyTrxSetState(uint8_t state);
 static void phySetRxState(void);
-#ifdef PHY_ENABLE_RANDOM_NUMBER_GENERATOR
+#ifdef PHY_HAS_RANDOM_NUMBER_GENERATOR
 static uint16_t phyGetRandomNumber(void);
 #endif
 
@@ -132,7 +133,7 @@ void PHY_Init(void)
 
   TRX_CTRL_2_REG_s.rxSafeMode = 1;
 
-#ifdef PHY_ENABLE_RANDOM_NUMBER_GENERATOR
+#ifdef PHY_HAS_RANDOM_NUMBER_GENERATOR
   CSMA_SEED_0_REG = (uint8_t)phyGetRandomNumber();
 #else
   CSMA_SEED_0_REG = 0x11;
@@ -232,7 +233,7 @@ void PHY_DataReq(uint8_t *data, uint8_t size)
   phyState = PHY_STATE_TX_WAIT_END;
 }
 
-#ifdef PHY_ENABLE_RANDOM_NUMBER_GENERATOR
+#ifdef PHY_HAS_RANDOM_NUMBER_GENERATOR
 /*************************************************************************//**
 *****************************************************************************/
 void PHY_RandomReq(void)
@@ -297,7 +298,7 @@ ISR(TRX24_CCA_ED_DONE_vect)
 }
 #endif
 
-#ifdef PHY_ENABLE_RANDOM_NUMBER_GENERATOR
+#ifdef PHY_HAS_RANDOM_NUMBER_GENERATOR
 /*************************************************************************//**
 *****************************************************************************/
 static uint16_t phyGetRandomNumber(void)
@@ -305,6 +306,8 @@ static uint16_t phyGetRandomNumber(void)
   uint16_t rnd = 0;
 
   IRQ_MASK_REG = 0x00;
+  TRX_RPC_REG = 0x00;
+
   phyTrxSetState(TRX_CMD_RX_ON);
 
   for (uint8_t i = 0; i < 16; i += 2)
@@ -315,11 +318,22 @@ static uint16_t phyGetRandomNumber(void)
 
   phyTrxSetState(TRX_CMD_TRX_OFF);
 
+  TRX_RPC_REG = 0xEB;
   IRQ_STATUS_REG = IRQ_STATUS_CLEAR_VALUE;
   IRQ_MASK_REG_s.rxEndEn = 1;
   IRQ_MASK_REG_s.txEndEn = 1;
 
   return rnd;
+}
+#endif
+
+#ifdef PHY_HAS_RANDOM_NUMBER_GENERATOR
+/*************************************************************************//**
+*****************************************************************************/
+void PHY_RandomConf(uint16_t rnd)
+{
+  srand(rnd);
+  srandom(rnd);
 }
 #endif
 
@@ -390,7 +404,7 @@ static void phyHandleSetRequests(void)
     PHY_TX_PWR_REG_s.txPwr = phyIb.txPower;
   }
 
-#ifdef PHY_ENABLE_RANDOM_NUMBER_GENERATOR
+#ifdef PHY_HAS_RANDOM_NUMBER_GENERATOR
   if (phyIb.request & PHY_REQ_RANDOM)
   {
     uint16_t rnd = phyGetRandomNumber();
