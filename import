@@ -1,0 +1,108 @@
+#!/bin/sh -e
+#
+# Script to import code from the Atmel LWM zipfiles
+#
+# Copyright (C) 2014, Matthijs Kooijman <matthijs@stdin.nl>
+#
+# This file is licensed under the 2-clause BSD license:
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
+# WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+usage() {
+	echo <<EOF
+Usage: $0 SRCECTORY
+
+	Imports source files from the given directory, which should be
+	the top level directory from the zipfile provided by Atmel.
+EOF
+}
+
+if [ "$#" != 1 ]; then
+	echo Need exactly one argument
+	usage
+	exit 1
+fi
+
+SRC=$1
+TARGET=$(cd $(dirname $0); pwd)
+if ! [ -d "$SRC" ]; then
+	echo Not a directory: $SRC
+	usage
+	exit 1
+fi
+
+for d in nwk phy hal sys; do
+	if ! [ -d "$SRC/$d" ]; then
+		echo $SRC does not look like a valid Atmel LWM directory, $SRC/$d missing
+		exit 1
+	fi
+done
+
+copy() {
+	FROM="$1"
+	TO="$2"
+
+
+	if [ -d "$TO" ]; then
+		# Remove any old files
+		rm -f "$TO"/*
+	else
+		mkdir -p "$TO"
+	fi
+
+	cp "$FROM/src"/* "$TO"
+	cp "$FROM/inc"/* "$TO"
+
+	dos2unix --quiet "$TO"/*.h "$TO"/*.c
+	sed -i -r 's%^#include ["<](phy|sys|nwk|hal)(.*)[">]$%#include "../\1/\1\2"%' "$TO"/*.h "$TO"/*.c
+	# Add extern "C" to header files to allow including them from C++
+	sed -i -r '1i #ifdef __cplusplus\nextern "C" {\n#endif' "$TO"/*.h
+	sed -i -r '$a #ifdef __cplusplus\n}\n#endif' "$TO"/*.h
+}
+
+copy "$SRC/sys" "$TARGET/src/lwm/sys"
+copy "$SRC/nwk" "$TARGET/src/lwm/nwk"
+
+# For now, import just the atmega256rfr2 code. We don't really need the
+# others and util the Arduino IDE allows to configure libraries from a
+# sketch, selecting the actual code to use isn't very easy anyway.
+copy "$SRC/phy/atmega256rfr2" "$TARGET/src/lwm/phy"
+
+# We skip the hal directory, since the functions defined there should be
+# manually defined to work on the Arduino platform. Note that the files
+# in hal/drivers are only used by the examples in apps, not by the rest
+# of the library.
+
+# Edit sysConfig.h to include a config.h from the root of this library.
+# This should allow editing the config.h, without the risk of a sketch
+# accidentally including it or this script overwriting it.
+sed -i -r 's%^#include "config.h"%#include "../../../config.h"%' "$TARGET/src/lwm/sys/sysConfig.h"
+
+# sysTypes.h and phy.c assume that one of the HAL_ and PHY_ constants
+# are defined on the compiler commandline. Since the Arduino IDE doesn't
+# offer anything for this currently, just insert an include of config.h
+# to the top of these files. This really isn't very pretty, though.
+sed -i -r '1i #include "../../../config.h"' "$TARGET/src/lwm/sys/sysTypes.h"
+sed -i -r '1i #include "../../../config.h"' "$TARGET/src/lwm/phy/phy.c"
