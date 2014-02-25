@@ -37,7 +37,7 @@
  *
  * \asf_license_stop
  *
- * $Id: sys.c 7863 2013-05-13 20:14:34Z ataradov $
+ * $Id: sys.c 8410 2013-08-08 16:59:55Z ataradov $
  *
  */
 
@@ -46,6 +46,7 @@
 #include "../phy/phy.h"
 #include "../nwk/nwk.h"
 #include "../hal/hal.h"
+#include "../sys/sys.h"
 #include "../sys/sysTimer.h"
 
 /*- Implementations --------------------------------------------------------*/
