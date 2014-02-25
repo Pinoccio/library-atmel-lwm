@@ -109,17 +109,15 @@ bool SYS_TimerStarted(SYS_Timer_t *timer)
 void SYS_TimerTaskHandler(void)
 {
   uint32_t elapsed;
-  uint8_t cnt;
+  static uint8_t prev;
+  uint8_t new;
 
-  if (0 == halTimerIrqCount)
+  if (halTimerIrqCount == prev)
     return;
 
-  ATOMIC_SECTION_ENTER
-    cnt = halTimerIrqCount;
-    halTimerIrqCount = 0;
-  ATOMIC_SECTION_LEAVE
-
-  elapsed = cnt * HAL_TIMER_INTERVAL;
+  new = halTimerIrqCount;
+  elapsed = (new - prev) * HAL_TIMER_INTERVAL;
+  prev = new;
 
   while (timers && (timers->timeout <= elapsed))
   {
