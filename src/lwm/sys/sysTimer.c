@@ -3,7 +3,7 @@
  *
  * \brief System timer implementation
  *
- * Copyright (C) 2012-2013, Atmel Corporation. All rights reserved.
+ * Copyright (C) 2012-2014, Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
@@ -37,7 +37,7 @@
  *
  * \asf_license_stop
  *
- * $Id: sysTimer.c 7863 2013-05-13 20:14:34Z ataradov $
+ * $Id: sysTimer.c 9157 2014-01-28 19:32:53Z ataradov $
  *
  */
 
