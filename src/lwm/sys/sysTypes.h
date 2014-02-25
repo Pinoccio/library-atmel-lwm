@@ -41,7 +41,7 @@ extern "C" {
  *
  * \asf_license_stop
  *
- * $Id: sysTypes.h 7863 2013-05-13 20:14:34Z ataradov $
+ * $Id: sysTypes.h 8375 2013-07-25 21:26:06Z ataradov $
  *
  */
 
@@ -94,21 +94,40 @@ extern "C" {
   #error Unsupported compiler
 */
 #else
-  #include <avr/io.h>
-  #include <avr/wdt.h>
-  #include <avr/interrupt.h>
-  #include <avr/pgmspace.h>
+  #if defined(HAL_ATSAMD20J18)
+    #include "atsamd20.h"
 
-  #define PRAGMA(x)
+    #define PRAGMA(x)
 
-  #define PACK __attribute__ ((packed))
+    #define PACK __attribute__ ((packed))
 
-  #define INLINE static inline __attribute__ ((always_inline))
+    #define INLINE static inline __attribute__ ((always_inline))
 
-  #define SYS_EnableInterrupts() sei()
+    #define SYS_EnableInterrupts() __asm volatile ("cpsie i");
 
-  #define ATOMIC_SECTION_ENTER   { uint8_t __atomic = SREG; cli();
-  #define ATOMIC_SECTION_LEAVE   SREG = __atomic; }
+    #define ATOMIC_SECTION_ENTER   { register uint32_t __atomic; \
+                                     __asm volatile ("mrs %0, primask" : "=r" (__atomic) ); \
+                                     __asm volatile ("cpsid i");
+    #define ATOMIC_SECTION_LEAVE   __asm volatile ("msr primask, %0" : : "r" (__atomic) ); }
+
+  #else // All AVRs
+    #include <avr/io.h>
+    #include <avr/wdt.h>
+    #include <avr/interrupt.h>
+    #include <avr/pgmspace.h>
+
+    #define PRAGMA(x)
+
+    #define PACK __attribute__ ((packed))
+
+    #define INLINE static inline __attribute__ ((always_inline))
+
+    #define SYS_EnableInterrupts() sei()
+
+    #define ATOMIC_SECTION_ENTER   { uint8_t __atomic = SREG; cli();
+    #define ATOMIC_SECTION_LEAVE   SREG = __atomic; }
+
+  #endif
 
 #endif
 
@@ -125,6 +144,8 @@ extern "C" {
 #elif defined(HAL_ATMEGA256RFR2)
 
 #elif defined(HAL_ATXMEGA128B1)
+
+#elif defined(HAL_ATSAMD20J18)
 
 #else
   #error Unknown HAL
