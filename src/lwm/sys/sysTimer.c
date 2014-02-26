@@ -116,7 +116,10 @@ void SYS_TimerTaskHandler(void)
     return;
 
   new = halTimerIrqCount;
-  elapsed = (new - prev) * HAL_TIMER_INTERVAL;
+  // note that this uint8_t cast is needed since subtraction performs
+  // "integral promotion", which convers new and prev to (signed) int,
+  // making the result a signed int as well.
+  elapsed = (uint8_t)(new - prev) * HAL_TIMER_INTERVAL;
   prev = new;
 
   while (timers && (timers->timeout <= elapsed))
