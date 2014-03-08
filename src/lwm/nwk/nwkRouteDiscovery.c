@@ -3,7 +3,7 @@
  *
  * \brief Route discovery implementation
  *
- * Copyright (C) 2012-2013, Atmel Corporation. All rights reserved.
+ * Copyright (C) 2012-2014, Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
@@ -37,7 +37,7 @@
  *
  * \asf_license_stop
  *
- * $Id: nwkRouteDiscovery.c 7863 2013-05-13 20:14:34Z ataradov $
+ * $Id: nwkRouteDiscovery.c 9157 2014-01-28 19:32:53Z ataradov $
  *
  */
 
@@ -254,6 +254,9 @@ bool nwkRouteDiscoveryRequestReceived(NWK_DataInd_t *ind)
   uint8_t linkQuality;
   bool reply = false;
 
+  if (sizeof(NwkCommandRouteRequest_t) != ind->size)
+    return false;
+
 #ifdef NWK_ENABLE_MULTICAST
   if (1 == command->multicast && NWK_GroupIsMember(command->dstAddr))
     reply = true;
@@ -338,6 +341,9 @@ bool nwkRouteDiscoveryReplyReceived(NWK_DataInd_t *ind)
   NwkCommandRouteReply_t *command = (NwkCommandRouteReply_t *)ind->data;
   NwkRouteDiscoveryTableEntry_t *entry;
   uint8_t linkQuality;
+
+  if (sizeof(NwkCommandRouteReply_t) != ind->size)
+    return false;
 
   entry = nwkRouteDiscoveryFindEntry(command->srcAddr, command->dstAddr, command->multicast);
 

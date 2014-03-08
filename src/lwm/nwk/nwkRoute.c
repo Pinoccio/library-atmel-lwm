@@ -3,7 +3,7 @@
  *
  * \brief Routing implementation
  *
- * Copyright (C) 2012-2013, Atmel Corporation. All rights reserved.
+ * Copyright (C) 2012-2014, Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
@@ -37,7 +37,7 @@
  *
  * \asf_license_stop
  *
- * $Id: nwkRoute.c 7863 2013-05-13 20:14:34Z ataradov $
+ * $Id: nwkRoute.c 9157 2014-01-28 19:32:53Z ataradov $
  *
  */
 
@@ -338,11 +338,16 @@ static void nwkRouteSendRouteError(uint16_t src, uint16_t dst, uint8_t multicast
 
 /*************************************************************************//**
 *****************************************************************************/
-void nwkRouteErrorReceived(NWK_DataInd_t *ind)
+bool nwkRouteErrorReceived(NWK_DataInd_t *ind)
 {
   NwkCommandRouteError_t *command = (NwkCommandRouteError_t *)ind->data;
 
+  if (sizeof(NwkCommandRouteError_t) != ind->size)
+    return false;
+
   nwkRouteRemove(command->dstAddr, command->multicast);
+
+  return true;
 }
 
 /*************************************************************************//**

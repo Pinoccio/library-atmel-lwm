@@ -3,7 +3,7 @@
  *
  * \brief Network layer management functions implementation
  *
- * Copyright (C) 2012-2013, Atmel Corporation. All rights reserved.
+ * Copyright (C) 2012-2014, Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
@@ -37,7 +37,7 @@
  *
  * \asf_license_stop
  *
- * $Id: nwk.c 7863 2013-05-13 20:14:34Z ataradov $
+ * $Id: nwk.c 9157 2014-01-28 19:32:53Z ataradov $
  *
  */
 
@@ -69,6 +69,7 @@ void NWK_Init(void)
   nwkIb.nwkSeqNum = 0;
   nwkIb.macSeqNum = 0;
   nwkIb.addr = 0;
+  nwkIb.lock = 0;
 
   for (uint8_t i = 0; i < NWK_ENDPOINTS_AMOUNT; i++)
     nwkIb.endpoint[i] = NULL;
@@ -131,7 +132,23 @@ void NWK_OpenEndpoint(uint8_t id, bool (*handler)(NWK_DataInd_t *ind))
 *****************************************************************************/
 bool NWK_Busy(void)
 {
-  return PHY_Busy() || (NULL != nwkFrameNext(NULL));
+  return nwkIb.lock > 0;
+}
+
+/*************************************************************************//**
+  @brief Increases the lock counter and sets a busy state
+*****************************************************************************/
+void NWK_Lock(void)
+{
+  nwkIb.lock++;
+}
+
+/*************************************************************************//**
+  @brief Decreases the lock counter and sets a free state if counter reaches 0
+*****************************************************************************/
+void NWK_Unlock(void)
+{
+  nwkIb.lock--;
 }
 
 /*************************************************************************//**

@@ -3,7 +3,7 @@
  *
  * \brief Receive routines implementation
  *
- * Copyright (C) 2012-2013, Atmel Corporation. All rights reserved.
+ * Copyright (C) 2012-2014, Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
@@ -37,7 +37,7 @@
  *
  * \asf_license_stop
  *
- * $Id: nwkRx.c 7863 2013-05-13 20:14:34Z ataradov $
+ * $Id: nwkRx.c 9169 2014-02-05 21:57:15Z ataradov $
  *
  */
 
@@ -253,32 +253,165 @@ static bool nwkRxRejectDuplicate(NwkFrameHeader_t *header)
 *****************************************************************************/
 static bool nwkRxSeriveDataInd(NWK_DataInd_t *ind)
 {
-  uint8_t cmd = ind->data[0];
+#ifdef NWK_ENABLE_SECURE_COMMANDS
+  if (0 == (ind->options & NWK_IND_OPT_SECURED))
+    return false;
+#endif
 
-  switch (cmd)
+  if (ind->size < 1)
+    return false;
+
+  switch (ind->data[0])
   {
     case NWK_COMMAND_ACK:
-      nwkTxAckReceived(ind);
-      return true;
+      return nwkTxAckReceived(ind);
 
 #ifdef NWK_ENABLE_ROUTING
     case NWK_COMMAND_ROUTE_ERROR:
-      nwkRouteErrorReceived(ind);
-      return true;
+      return nwkRouteErrorReceived(ind);
 #endif
 
 #ifdef NWK_ENABLE_ROUTE_DISCOVERY
     case NWK_COMMAND_ROUTE_REQUEST:
-      nwkRouteDiscoveryRequestReceived(ind);
-      return true;
+      return nwkRouteDiscoveryRequestReceived(ind);
 
     case NWK_COMMAND_ROUTE_REPLY:
-      nwkRouteDiscoveryReplyReceived(ind);
-      return true;
+      return nwkRouteDiscoveryReplyReceived(ind);
 #endif
 
     default:
       return false;
+  }
+}
+
+/*************************************************************************//**
+*****************************************************************************/
+static void nwkRxHandleReceivedFrame(NwkFrame_t *frame)
+{
+  NwkFrameHeader_t *header = &frame->header;
+
+  frame->state = NWK_RX_STATE_FINISH;
+
+#ifndef NWK_ENABLE_SECURITY
+  if (header->nwkFcf.security)
+    return;
+#endif
+
+#ifdef NWK_ENABLE_MULTICAST
+  if (header->nwkFcf.multicast && header->nwkFcf.ackRequest)
+    return;
+#else
+  if (header->nwkFcf.multicast)
+    return;
+#endif
+
+  if (NWK_BROADCAST_PANID == header->macDstPanId)
+  {
+    if (nwkIb.addr == header->nwkDstAddr || NWK_BROADCAST_ADDR == header->nwkDstAddr)
+    {
+    #ifdef NWK_ENABLE_SECURITY
+      if (header->nwkFcf.security)
+        frame->state = NWK_RX_STATE_DECRYPT;
+      else
+    #endif
+        frame->state = NWK_RX_STATE_INDICATE;
+    }
+    return;
+  }
+
+#ifdef NWK_ENABLE_ADDRESS_FILTER
+  if (!NWK_FilterAddress(header->macSrcAddr, &frame->rx.lqi))
+    return;
+#endif
+
+  if (NWK_BROADCAST_ADDR == header->nwkDstAddr && header->nwkFcf.ackRequest)
+    return;
+
+  if (nwkIb.addr == header->nwkSrcAddr)
+    return;
+
+#ifdef NWK_ENABLE_ROUTING
+  nwkRouteFrameReceived(frame);
+#endif
+
+  if (nwkRxRejectDuplicate(header))
+    return;
+
+#ifdef NWK_ENABLE_MULTICAST
+  if (header->nwkFcf.multicast)
+  {
+    NwkFrameMulticastHeader_t *mcHeader = (NwkFrameMulticastHeader_t *)frame->payload;
+    bool member = NWK_GroupIsMember(header->nwkDstAddr);
+    bool broadcast = false;
+
+    if (NWK_BROADCAST_ADDR == header->macDstAddr)
+    {
+      if (member)
+      {
+        broadcast = mcHeader->memberRadius > 0;
+        mcHeader->memberRadius--;
+        mcHeader->nonMemberRadius = mcHeader->maxNonMemberRadius;
+      }
+      else
+      {
+        broadcast = mcHeader->nonMemberRadius > 0;
+        mcHeader->nonMemberRadius--;
+        mcHeader->memberRadius = mcHeader->maxMemberRadius;
+      }
+    }
+    else
+    {
+      if (member)
+      {
+        broadcast = true;
+        header->nwkFcf.linkLocal = 1;
+      }
+    #ifdef NWK_ENABLE_ROUTING
+      else
+      {
+        frame->state = NWK_RX_STATE_ROUTE;
+      }
+    #endif
+    }
+
+    if (broadcast)
+      nwkTxBroadcastFrame(frame);
+
+    if (member)
+    {
+      frame->payload += sizeof(NwkFrameMulticastHeader_t);
+
+    #ifdef NWK_ENABLE_SECURITY
+      if (header->nwkFcf.security)
+        frame->state = NWK_RX_STATE_DECRYPT;
+      else
+    #endif
+        frame->state = NWK_RX_STATE_INDICATE;
+    }
+  }
+  else
+#endif // NWK_ENABLE_MULTICAST
+  {
+    if (NWK_BROADCAST_ADDR == header->macDstAddr && nwkIb.addr != header->nwkDstAddr &&
+        0 == header->nwkFcf.linkLocal)
+      nwkTxBroadcastFrame(frame);
+
+    if (nwkIb.addr == header->nwkDstAddr || NWK_BROADCAST_ADDR == header->nwkDstAddr)
+    {
+    #ifdef NWK_ENABLE_SECURITY
+      if (header->nwkFcf.security)
+        frame->state = NWK_RX_STATE_DECRYPT;
+      else
+    #endif
+        frame->state = NWK_RX_STATE_INDICATE;
+    }
+
+  #ifdef NWK_ENABLE_ROUTING
+    else if (nwkIb.addr == header->macDstAddr)
+    {
+      frame->state = NWK_RX_STATE_ROUTE;
+    }
+  #endif
   }
 }
 
@@ -314,113 +447,31 @@ static bool nwkRxIndicateFrame(NwkFrame_t *frame)
 
 /*************************************************************************//**
 *****************************************************************************/
-static void nwkRxHandleReceivedFrame(NwkFrame_t *frame)
+static void nwkRxHandleIndication(NwkFrame_t *frame)
 {
-  NwkFrameHeader_t *header = &frame->header;
+  bool ack;
+
+  nwkRxAckControl = 0;
+  ack = nwkRxIndicateFrame(frame);
+  
+  if (0 == frame->header.nwkFcf.ackRequest)
+    ack = false;
+
+  if (NWK_BROADCAST_ADDR == frame->header.macDstAddr &&
+      nwkIb.addr == frame->header.nwkDstAddr &&
+      0 == frame->header.nwkFcf.multicast)
+    ack = true;
+
+  if (NWK_BROADCAST_PANID == frame->header.macDstPanId)
+    ack = false;
+
+  if (NWK_BROADCAST_ADDR == nwkIb.addr)
+    ack = false;
+
+  if (ack)
+    nwkRxSendAck(frame);
 
   frame->state = NWK_RX_STATE_FINISH;
-
-#ifdef NWK_ENABLE_ADDRESS_FILTER
-  if (!NWK_FilterAddress(header->macSrcAddr, &frame->rx.lqi))
-    return;
-#endif
-
-  if ((NWK_BROADCAST_ADDR == header->nwkDstAddr && header->nwkFcf.ackRequest) ||
-      (nwkIb.addr == header->nwkSrcAddr))
-    return;
-
-#ifndef NWK_ENABLE_SECURITY
-  if (header->nwkFcf.security)
-    return;
-#endif
-
-#ifdef NWK_ENABLE_MULTICAST
-  if (header->nwkFcf.multicast && (header->nwkFcf.ackRequest ||
-      0 == header->nwkFcf.linkLocal || NWK_BROADCAST_PANID == header->macDstPanId))
-    return;
-#else
-  if (header->nwkFcf.multicast)
-    return;
-#endif
-
-#ifdef NWK_ENABLE_ROUTING
-  nwkRouteFrameReceived(frame);
-#endif
-
-  if (nwkRxRejectDuplicate(header))
-    return;
-
-#ifdef NWK_ENABLE_MULTICAST
-  if (header->nwkFcf.multicast)
-  {
-    NwkFrameMulticastHeader_t *mcHeader = (NwkFrameMulticastHeader_t *)frame->payload;
-    bool member = NWK_GroupIsMember(header->nwkDstAddr);
-    bool broadcast = false;
-
-    if (NWK_BROADCAST_ADDR == header->macDstAddr)
-    {
-      if (member)
-      {
-        broadcast = mcHeader->memberRadius > 0;
-        mcHeader->memberRadius--;
-        mcHeader->nonMemberRadius = mcHeader->maxNonMemberRadius;
-      }
-      else
-      {
-        broadcast = mcHeader->nonMemberRadius > 0;
-        mcHeader->nonMemberRadius--;
-        mcHeader->memberRadius = mcHeader->maxMemberRadius;
-      }
-    }
-    else
-    {
-      if (member)
-        broadcast = true;
-    #ifdef NWK_ENABLE_ROUTING
-      else
-        frame->state = NWK_RX_STATE_ROUTE;
-    #endif
-    }
-
-    if (broadcast)
-      nwkTxBroadcastFrame(frame);
-
-    if (member)
-    {
-      frame->payload += sizeof(NwkFrameMulticastHeader_t);
-
-    #ifdef NWK_ENABLE_SECURITY
-      if (header->nwkFcf.security)
-        frame->state = NWK_RX_STATE_DECRYPT;
-      else
-    #endif
-        frame->state = NWK_RX_STATE_INDICATE;
-    }
-  }
-  else
-#endif // NWK_ENABLE_MULTICAST
-  {
-    if (NWK_BROADCAST_ADDR == header->macDstAddr && nwkIb.addr != header->nwkDstAddr &&
-        NWK_BROADCAST_PANID != header->macDstPanId && 0 == header->nwkFcf.linkLocal)
-      nwkTxBroadcastFrame(frame);
-
-    if (nwkIb.addr == header->nwkDstAddr || NWK_BROADCAST_ADDR == header->nwkDstAddr)
-    {
-    #ifdef NWK_ENABLE_SECURITY
-      if (header->nwkFcf.security)
-        frame->state = NWK_RX_STATE_DECRYPT;
-      else
-    #endif
-        frame->state = NWK_RX_STATE_INDICATE;
-    }
-
-  #ifdef NWK_ENABLE_ROUTING
-    else if (nwkIb.addr == header->macDstAddr && NWK_BROADCAST_PANID != header->macDstPanId)
-    {
-      frame->state = NWK_RX_STATE_ROUTE;
-    }
-  #endif
-  }
 }
 
 /*************************************************************************//**
@@ -448,23 +499,7 @@ void nwkRxTaskHandler(void)
 
       case NWK_RX_STATE_INDICATE:
       {
-        bool ack, forceAck;
-
-        nwkRxAckControl = 0;
-        ack = nwkRxIndicateFrame(frame);
-
-#ifdef NWK_ENABLE_MULTICAST
-        if (frame->header.nwkFcf.multicast)
-          forceAck = false;
-        else
-#endif
-          forceAck = (NWK_BROADCAST_ADDR == frame->header.macDstAddr &&
-              nwkIb.addr == frame->header.nwkDstAddr);
-
-        if ((frame->header.nwkFcf.ackRequest && ack) || forceAck)
-          nwkRxSendAck(frame);
-
-        frame->state = NWK_RX_STATE_FINISH;
+        nwkRxHandleIndication(frame);
       } break;
 
 #ifdef NWK_ENABLE_ROUTING

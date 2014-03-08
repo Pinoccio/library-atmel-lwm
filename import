@@ -85,10 +85,10 @@ copy() {
 copy "$SRC/sys" "$TARGET/src/lwm/sys"
 copy "$SRC/nwk" "$TARGET/src/lwm/nwk"
 
-# For now, import just the atmega256rfr2 code. We don't really need the
+# For now, import just the atmegarfr2 code. We don't really need the
 # others and util the Arduino IDE allows to configure libraries from a
 # sketch, selecting the actual code to use isn't very easy anyway.
-copy "$SRC/phy/atmega256rfr2" "$TARGET/src/lwm/phy"
+copy "$SRC/phy/atmegarfr2" "$TARGET/src/lwm/phy"
 
 # We skip the hal directory, since the functions defined there should be
 # manually defined to work on the Arduino platform. Note that the files
