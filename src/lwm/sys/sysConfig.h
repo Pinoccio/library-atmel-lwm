@@ -87,10 +87,6 @@ extern "C" {
 #define NWK_ROUTE_DISCOVERY_TIMEOUT              1000 // ms
 #endif
 
-#ifndef NWK_MAX_ENDPOINTS_AMOUNT
-#define NWK_MAX_ENDPOINTS_AMOUNT                 20
-#endif
-
 #define NWK_ENABLE_ROUTING
 #define NWK_ENABLE_SECURITY
 #define NWK_ENABLE_MULTICAST
