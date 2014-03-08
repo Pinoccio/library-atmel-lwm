@@ -6,7 +6,7 @@ extern "C" {
  *
  * \brief Transmit routines interface
  *
- * Copyright (C) 2012-2013, Atmel Corporation. All rights reserved.
+ * Copyright (C) 2012-2014, Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
@@ -40,7 +40,7 @@ extern "C" {
  *
  * \asf_license_stop
  *
- * $Id: nwkTx.h 7863 2013-05-13 20:14:34Z ataradov $
+ * $Id: nwkTx.h 9157 2014-01-28 19:32:53Z ataradov $
  *
  */
 
@@ -65,7 +65,7 @@ enum
 void nwkTxInit(void);
 void nwkTxFrame(NwkFrame_t *frame);
 void nwkTxBroadcastFrame(NwkFrame_t *frame);
-void nwkTxAckReceived(NWK_DataInd_t *ind);
+bool nwkTxAckReceived(NWK_DataInd_t *ind);
 void nwkTxConfirm(NwkFrame_t *frame, uint8_t status);
 void nwkTxEncryptConf(NwkFrame_t *frame);
 void nwkTxTaskHandler(void);

@@ -6,7 +6,7 @@ extern "C" {
  *
  * \brief Network commands interface
  *
- * Copyright (C) 2012-2013, Atmel Corporation. All rights reserved.
+ * Copyright (C) 2012-2014, Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
@@ -40,7 +40,7 @@ extern "C" {
  *
  * \asf_license_stop
  *
- * $Id: nwkCommand.h 7863 2013-05-13 20:14:34Z ataradov $
+ * $Id: nwkCommand.h 9157 2014-01-28 19:32:53Z ataradov $
  *
  */
 

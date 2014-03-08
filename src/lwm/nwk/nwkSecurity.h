@@ -6,7 +6,7 @@ extern "C" {
  *
  * \brief Network layer security interface
  *
- * Copyright (C) 2012-2013, Atmel Corporation. All rights reserved.
+ * Copyright (C) 2012-2014, Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
@@ -40,7 +40,7 @@ extern "C" {
  *
  * \asf_license_stop
  *
- * $Id: nwkSecurity.h 7863 2013-05-13 20:14:34Z ataradov $
+ * $Id: nwkSecurity.h 9157 2014-01-28 19:32:53Z ataradov $
  *
  */
 
@@ -52,14 +52,14 @@ extern "C" {
 #include <stdbool.h>
 #include "../sys/sysConfig.h"
 
-#ifdef NWK_ENABLE_SECURITY
-
 /*- Definitions ------------------------------------------------------------*/
 #define NWK_SECURITY_MIC_SIZE        4
 #define NWK_SECURITY_KEY_SIZE        16
 #define NWK_SECURITY_BLOCK_SIZE      16
 
 /*- Prototypes -------------------------------------------------------------*/
+#ifdef NWK_ENABLE_SECURITY
+
 void NWK_SetSecurityKey(uint8_t *key);
 
 void nwkSecurityInit(void);

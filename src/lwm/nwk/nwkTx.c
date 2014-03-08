@@ -3,7 +3,7 @@
  *
  * \brief Transmit routines implementation
  *
- * Copyright (C) 2012-2013, Atmel Corporation. All rights reserved.
+ * Copyright (C) 2012-2014, Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
@@ -37,7 +37,7 @@
  *
  * \asf_license_stop
  *
- * $Id: nwkTx.c 7863 2013-05-13 20:14:34Z ataradov $
+ * $Id: nwkTx.c 9157 2014-01-28 19:32:53Z ataradov $
  *
  */
 
@@ -176,10 +176,13 @@ void nwkTxBroadcastFrame(NwkFrame_t *frame)
 
 /*************************************************************************//**
 *****************************************************************************/
-void nwkTxAckReceived(NWK_DataInd_t *ind)
+bool nwkTxAckReceived(NWK_DataInd_t *ind)
 {
   NwkCommandAck_t *command = (NwkCommandAck_t *)ind->data;
   NwkFrame_t *frame = NULL;
+
+  if (sizeof(NwkCommandAck_t) != ind->size)
+    return false;
 
   while (NULL != (frame = nwkFrameNext(frame)))
   {
@@ -187,9 +190,11 @@ void nwkTxAckReceived(NWK_DataInd_t *ind)
     {
       frame->state = NWK_TX_STATE_CONFIRM;
       frame->tx.control = command->control;
-      return;
+      return true;
     }
   }
+
+  return false;
 }
 
 /*************************************************************************//**
@@ -255,30 +260,32 @@ static void nwkTxDelayTimerHandler(SYS_Timer_t *timer)
 
 /*************************************************************************//**
 *****************************************************************************/
-static uint8_t convertPhyStatus(uint8_t status)
+static uint8_t nwkTxConvertPhyStatus(uint8_t status)
 {
-  if (TRAC_STATUS_SUCCESS == status ||
-      TRAC_STATUS_SUCCESS_DATA_PENDING == status ||
-      TRAC_STATUS_SUCCESS_WAIT_FOR_ACK == status)
-    return NWK_SUCCESS_STATUS;
+  switch (status)
+  {
+    case PHY_STATUS_SUCCESS:
+      return NWK_SUCCESS_STATUS;
 
-  else if (TRAC_STATUS_CHANNEL_ACCESS_FAILURE == status)
-    return NWK_PHY_CHANNEL_ACCESS_FAILURE_STATUS;
+    case PHY_STATUS_CHANNEL_ACCESS_FAILURE:
+      return NWK_PHY_CHANNEL_ACCESS_FAILURE_STATUS;
 
-  else if (TRAC_STATUS_NO_ACK == status)
-    return NWK_PHY_NO_ACK_STATUS;
+    case PHY_STATUS_NO_ACK:
+      return NWK_PHY_NO_ACK_STATUS;
 
-  else
-    return NWK_ERROR_STATUS;
+    default:
+      return NWK_ERROR_STATUS;
+  }
 }
 
 /*************************************************************************//**
 *****************************************************************************/
 void PHY_DataConf(uint8_t status)
 {
-  nwkTxPhyActiveFrame->tx.status = convertPhyStatus(status);
+  nwkTxPhyActiveFrame->tx.status = nwkTxConvertPhyStatus(status);
   nwkTxPhyActiveFrame->state = NWK_TX_STATE_SENT;
   nwkTxPhyActiveFrame = NULL;
+  nwkIb.lock--;
 }
 
 /*************************************************************************//**
@@ -314,11 +321,12 @@ void nwkTxTaskHandler(void)
 
       case NWK_TX_STATE_SEND:
       {
-        if (!PHY_Busy())
+        if (NULL == nwkTxPhyActiveFrame)
         {
           nwkTxPhyActiveFrame = frame;
           frame->state = NWK_TX_STATE_WAIT_CONF;
           PHY_DataReq(frame->data, frame->size);
+          nwkIb.lock++;
         }
       } break;
 
