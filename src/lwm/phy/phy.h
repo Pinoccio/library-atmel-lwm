@@ -55,7 +55,7 @@ extern "C" {
 /*- Definitions ------------------------------------------------------------*/
 #define PHY_RSSI_BASE_VAL                     (-90)
 
-#define PHY_HAS_RANDOM_NUMBER_GENERATOR
+#define PHY_ENABLE_RANDOM_NUMBER_GENERATOR
 #define PHY_HAS_AES_MODULE
 
 /*- Types ------------------------------------------------------------------*/
