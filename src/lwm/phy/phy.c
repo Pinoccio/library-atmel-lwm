@@ -38,7 +38,10 @@
  *
  * \asf_license_stop
  *
- * $Id: phy.c 9200 2014-02-18 21:10:58Z ataradov $
+ * Modification and other use of this code is subject to Atmel's Limited
+ * License Agreement (license.txt).
+ *
+ * $Id: phy.c 9267 2014-03-18 21:46:19Z ataradov $
  *
  */
 

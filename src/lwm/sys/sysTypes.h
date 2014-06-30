@@ -41,7 +41,10 @@ extern "C" {
  *
  * \asf_license_stop
  *
- * $Id: sysTypes.h 9177 2014-02-06 21:06:25Z ataradov $
+ * Modification and other use of this code is subject to Atmel's Limited
+ * License Agreement (license.txt).
+ *
+ * $Id: sysTypes.h 9267 2014-03-18 21:46:19Z ataradov $
  *
  */
 
@@ -102,6 +105,12 @@ extern "C" {
 
     #define SYS_MCU_ARCH_CORTEX_M
 
+  #elif defined(HAL_ATSAMD21J18)
+    #define DONT_USE_CMSIS_INIT
+    #include "samd21j18a.h"
+
+    #define SYS_MCU_ARCH_CORTEX_M
+
   #else // All AVRs
     #include <avr/io.h>
     #include <avr/wdt.h>
@@ -155,6 +164,7 @@ extern "C" {
 #elif defined(HAL_ATXMEGA128B1)
 #elif defined(HAL_ATXMEGA256A3U)
 #elif defined(HAL_ATSAMD20J18)
+#elif defined(HAL_ATSAMD21J18)
 #else
   #error Unknown HAL
 #endif
