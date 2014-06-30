@@ -106,3 +106,10 @@ sed -i -r 's%^#include "config.h"%#include "../../../config.h"%' "$TARGET/src/lw
 # to the top of these files. This really isn't very pretty, though.
 sed -i -r '1i #include "../../../config.h"' "$TARGET/src/lwm/sys/sysTypes.h"
 sed -i -r '1i #include "../../../config.h"' "$TARGET/src/lwm/phy/phy.c"
+
+cp "$SRC/license.txt" "$TARGET"
+# license.txt contains curly quotes in a window-specific encoding, just
+# convert to utf8.
+iconv -f cp1252 -t utf8 "$TARGET/license.txt" --output "$TARGET/license.txt"
+dos2unix --quiet "$TARGET/license.txt"
+
