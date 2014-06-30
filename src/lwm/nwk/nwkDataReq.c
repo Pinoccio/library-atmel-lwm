@@ -37,7 +37,10 @@
  *
  * \asf_license_stop
  *
- * $Id: nwkDataReq.c 9165 2014-02-03 23:47:21Z ataradov $
+ * Modification and other use of this code is subject to Atmel's Limited
+ * License Agreement (license.txt).
+ *
+ * $Id: nwkDataReq.c 9267 2014-03-18 21:46:19Z ataradov $
  *
  */
 
