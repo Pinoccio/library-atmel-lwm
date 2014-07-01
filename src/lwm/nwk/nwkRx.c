@@ -37,7 +37,10 @@
  *
  * \asf_license_stop
  *
- * $Id: nwkRx.c 9169 2014-02-05 21:57:15Z ataradov $
+ * Modification and other use of this code is subject to Atmel's Limited
+ * License Agreement (license.txt).
+ *
+ * $Id: nwkRx.c 9267 2014-03-18 21:46:19Z ataradov $
  *
  */
 
@@ -84,7 +87,7 @@ typedef struct NwkDuplicateRejectionEntry_t
 
 /*- Prototypes -------------------------------------------------------------*/
 static void nwkRxDuplicateRejectionTimerHandler(SYS_Timer_t *timer);
-static bool nwkRxSeriveDataInd(NWK_DataInd_t *ind);
+static bool nwkRxServiceDataInd(NWK_DataInd_t *ind);
 
 /*- Variables --------------------------------------------------------------*/
 static NwkDuplicateRejectionEntry_t nwkRxDuplicateRejectionTable[NWK_DUPLICATE_REJECTION_TABLE_SIZE];
@@ -105,7 +108,7 @@ void nwkRxInit(void)
   nwkRxDuplicateRejectionTimer.mode = SYS_TIMER_INTERVAL_MODE;
   nwkRxDuplicateRejectionTimer.handler = nwkRxDuplicateRejectionTimerHandler;
 
-  NWK_OpenEndpoint(NWK_SERVICE_ENDPOINT_ID, nwkRxSeriveDataInd);
+  NWK_OpenEndpoint(NWK_SERVICE_ENDPOINT_ID, nwkRxServiceDataInd);
 }
 
 /*************************************************************************//**
@@ -251,7 +254,7 @@ static bool nwkRxRejectDuplicate(NwkFrameHeader_t *header)
 
 /*************************************************************************//**
 *****************************************************************************/
-static bool nwkRxSeriveDataInd(NWK_DataInd_t *ind)
+static bool nwkRxServiceDataInd(NWK_DataInd_t *ind)
 {
 #ifdef NWK_ENABLE_SECURE_COMMANDS
   if (0 == (ind->options & NWK_IND_OPT_SECURED))
