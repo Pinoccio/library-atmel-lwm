@@ -49,7 +49,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include "../phy/phy.h"
+#ifdef PHY_AT86RF212
+#include "../phy/at86rf212/phy.h"
+#else
+#include "../phy/atmegarfr2/phy.h"
+#endif
 #include "../sys/sysConfig.h"
 #include "../nwk/nwkRx.h"
 #include "../nwk/nwkTx.h"

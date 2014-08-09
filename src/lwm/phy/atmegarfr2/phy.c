@@ -1,4 +1,4 @@
-#include "../../../config.h"
+#include "../../../../config.h"
 /**
  * \file phy.c
  *
@@ -48,9 +48,9 @@
 #ifdef PHY_ATMEGARFR2
 
 /*- Includes ---------------------------------------------------------------*/
-#include "../sys/sysTypes.h"
-#include "../hal/hal.h"
-#include "../phy/phy.h"
+#include "../../sys/sysTypes.h"
+#include "../../hal/hal.h"
+#include "phy.h"
 #include "atmegarfr2.h"
 
 /*- Definitions ------------------------------------------------------------*/

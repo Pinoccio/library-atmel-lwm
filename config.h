@@ -1,8 +1,12 @@
 #ifndef _LWM_CONFIG_H
 #define _LWM_CONFIG_H
 
-// For now, only 256RFR2 is supported
+// ATmega256RFR2
+// #define HAL_ATMEGA256RFR2
+// #define PHY_ATMEGARFR2
+
+// AT86RF212(B)
 #define HAL_ATMEGA256RFR2
-#define PHY_ATMEGARFR2
+#define PHY_AT86RF212
 
 #endif // _LWM_CONFIG_H

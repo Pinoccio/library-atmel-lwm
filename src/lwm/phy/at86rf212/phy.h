@@ -1,10 +1,7 @@
-#ifdef __cplusplus
-extern "C" {
-#endif
 /**
  * \file phy.h
  *
- * \brief ATMEGAxxxRFR2 PHY interface
+ * \brief AT86RF212 PHY interface
  *
  * Copyright (C) 2012-2014, Atmel Corporation. All rights reserved.
  *
@@ -51,12 +48,18 @@ extern "C" {
 #define _PHY_H_
 
 /*- Includes ---------------------------------------------------------------*/
+#include <avr/io.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "../sys/sysConfig.h"
+#include "../../hal/hal.h"
+#include "../../sys/sysConfig.h"
 
 /*- Definitions ------------------------------------------------------------*/
-#define PHY_RSSI_BASE_VAL                     (-90)
+#define PHY_RSSI_BASE_VAL_BPSK_20             (-100)
+#define PHY_RSSI_BASE_VAL_BPSK_40             (-99)
+#define PHY_RSSI_BASE_VAL_OQPSK_SIN_RC_100    (-98)
+#define PHY_RSSI_BASE_VAL_OQPSK_SIN_250       (-97)
+#define PHY_RSSI_BASE_VAL_OQPSK_RC_250        (-97)
 
 #define PHY_ENABLE_RANDOM_NUMBER_GENERATOR
 #define PHY_HAS_AES_MODULE
@@ -83,6 +86,7 @@ void PHY_Init(void);
 void PHY_SetRxState(bool rx);
 void PHY_SetChannel(uint8_t channel);
 void PHY_SetBand(uint8_t band);
+void PHY_SetModulation(uint8_t modulation);
 void PHY_SetPanId(uint16_t panId);
 void PHY_SetShortAddr(uint16_t addr);
 void PHY_SetTxPower(uint8_t txPower);
@@ -92,6 +96,49 @@ void PHY_DataReq(uint8_t *data, uint8_t size);
 void PHY_DataConf(uint8_t status);
 void PHY_DataInd(PHY_DataInd_t *ind);
 void PHY_TaskHandler(void);
+
+uint8_t HAL_PhySpiWriteByte(uint8_t value);
+void HAL_PhyReset(void);
+void halPhyInit(void);
+
+/*- Implementations --------------------------------------------------------*/
+
+/*************************************************************************//**
+*****************************************************************************/
+inline uint8_t HAL_PhySpiWriteByteInline(uint8_t value)
+{
+  SPDR = value;
+  while (!(SPSR & (1 << SPIF)));
+  return SPDR;
+}
+
+/*************************************************************************//**
+*****************************************************************************/
+inline void HAL_PhySpiSelect(void)
+{
+  HAL_GPIO_PHY_CS_clr();
+}
+
+/*************************************************************************//**
+*****************************************************************************/
+inline void HAL_PhySpiDeselect(void)
+{
+  HAL_GPIO_PHY_CS_set();
+}
+
+/*************************************************************************//**
+*****************************************************************************/
+inline void HAL_PhySlpTrSet(void)
+{
+  HAL_GPIO_PHY_SLP_TR_set();
+}
+
+/*************************************************************************//**
+*****************************************************************************/
+inline void HAL_PhySlpTrClear(void)
+{
+  HAL_GPIO_PHY_SLP_TR_clr();
+}
 
 #ifdef PHY_ENABLE_RANDOM_NUMBER_GENERATOR
 uint16_t PHY_RandomReq(void);
@@ -106,6 +153,3 @@ int8_t PHY_EdReq(void);
 #endif
 
 #endif // _PHY_H_
-#ifdef __cplusplus
-}
-#endif

@@ -52,7 +52,11 @@ extern "C" {
 
 /*- Includes ---------------------------------------------------------------*/
 #include "../sys/sysConfig.h"
-#include "../phy/phy.h"
+#ifdef PHY_AT86RF212
+#include "../phy/at86rf212/phy.h"
+#else
+#include "../phy/atmegarfr2/phy.h"
+#endif
 #include "../nwk/nwk.h"
 #include "../hal/hal.h"
 

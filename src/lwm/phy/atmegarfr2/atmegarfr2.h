@@ -51,7 +51,8 @@ extern "C" {
 #define _ATMEGARFR2_H_
 
 /*- Includes ---------------------------------------------------------------*/
-#include "../sys/sysTypes.h"
+#include "../../sys/sysTypes.h"
+#include "phy.h"
 
 /*- Definitions ------------------------------------------------------------*/
 #define AES_BLOCK_SIZE                 16

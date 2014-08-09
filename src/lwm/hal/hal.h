@@ -40,5 +40,23 @@
 inline void HAL_Init(void) { /* Nothing to do */ }
 inline void HAL_Delay(uint8_t us) { delay(us); }
 
+#define HAL_GPIO_PIN(name, port, bit) \
+  inline void    HAL_GPIO_##name##_set(void)      { PORT##port |= (1 << bit); } \
+  inline void    HAL_GPIO_##name##_clr(void)      { PORT##port &= ~(1 << bit); } \
+  inline void    HAL_GPIO_##name##_toggle(void)   { PORT##port ^= (1 << bit); } \
+  inline void    HAL_GPIO_##name##_in(void)       { DDR##port &= ~(1 << bit); PORT##port &= ~(1 << bit); } \
+  inline void    HAL_GPIO_##name##_out(void)      { DDR##port |= (1 << bit); } \
+  inline void    HAL_GPIO_##name##_pullup(void)   { PORT##port |= (1 << bit); } \
+  inline uint8_t HAL_GPIO_##name##_read(void)     { return (PIN##port & (1 << bit)) != 0; } \
+  inline uint8_t HAL_GPIO_##name##_state(void)    { return (DDR##port & (1 << bit)) != 0; }
+  
+// Pinoccio Scout pins
+HAL_GPIO_PIN(PHY_RST,    E, 2); // D6
+HAL_GPIO_PIN(PHY_IRQ,    E, 6); // D7
+HAL_GPIO_PIN(PHY_SLP_TR, D, 5); // D8
+HAL_GPIO_PIN(PHY_CS,     B, 0);
+HAL_GPIO_PIN(PHY_MISO,   B, 3);
+HAL_GPIO_PIN(PHY_MOSI,   B, 2);
+HAL_GPIO_PIN(PHY_SCK,    B, 1);
 #endif // _HAL_H_
 

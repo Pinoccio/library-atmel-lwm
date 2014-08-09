@@ -49,7 +49,11 @@
 #include <string.h>
 #include "../sys/sysEncrypt.h"
 #include "../sys/sysConfig.h"
-#include "../phy/phy.h"
+#ifdef PHY_AT86RF212
+#include "../phy/at86rf212/phy.h"
+#else
+#include "../phy/atmegarfr2/phy.h"
+#endif
 
 #ifdef NWK_ENABLE_SECURITY
 
