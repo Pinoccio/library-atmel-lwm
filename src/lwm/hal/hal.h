@@ -37,8 +37,8 @@
 
 #include <Arduino.h>
 
-inline void HAL_Init(void) { /* Nothing to do */ }
-inline void HAL_Delay(uint8_t us) { delay(us); }
+static inline void HAL_Init(void) { /* Nothing to do */ }
+static inline void HAL_Delay(uint8_t us) { delay(us); }
 
 #endif // _HAL_H_
 
