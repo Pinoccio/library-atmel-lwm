@@ -296,6 +296,9 @@ static void phyTrxSetState(uint8_t state)
   while (state != TRX_STATUS_REG_s.trxStatus);
 }
 
+/* Weakly reference this function, so it becomes optional */
+bool PHY_PreDataInd(PHY_DataInd_t *ind) __attribute__((__weak__));
+
 /*************************************************************************//**
 *****************************************************************************/
 void PHY_TaskHandler(void)
@@ -315,7 +318,12 @@ void PHY_TaskHandler(void)
     ind.size = size - PHY_CRC_SIZE;
     ind.lqi  = phyRxBuffer[size];
     ind.rssi = (int8_t)PHY_ED_LEVEL_REG + PHY_RSSI_BASE_VAL;
-    PHY_DataInd(&ind);
+
+    /* First let PHY_PreDataInd look at the packet. Only if it didn't
+     * process it (returns false), pass it to the normal PHY_DataInd
+     * function. */
+    if (!PHY_PreDataInd || !PHY_PreDataInd(&ind))
+      PHY_DataInd(&ind);
 
     while (TRX_STATUS_RX_AACK_ON != TRX_STATUS_REG_s.trxStatus);
 
