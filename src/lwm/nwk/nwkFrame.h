@@ -111,6 +111,7 @@ typedef struct NwkFrame_t
     {
       uint8_t  lqi;
       int8_t   rssi;
+      uint32_t timestamp;
     } rx;
 
     struct

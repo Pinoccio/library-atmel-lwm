@@ -124,6 +124,7 @@ void PHY_DataInd(PHY_DataInd_t *ind)
   if (NULL == (frame = nwkFrameAlloc()))
     return;
 
+  frame->rx.timestamp = ind->timestamp;
   frame->state = NWK_RX_STATE_RECEIVED;
   frame->size = ind->size;
   frame->rx.lqi = ind->lqi;
@@ -428,6 +429,7 @@ static bool nwkRxIndicateFrame(NwkFrame_t *frame)
   if (NULL == nwkIb.endpoint[header->nwkDstEndpoint])
     return false;
 
+  ind.timestamp = frame->rx.timestamp;
   ind.srcAddr = header->nwkSrcAddr;
   ind.dstAddr = header->nwkDstAddr;
   ind.srcEndpoint = header->nwkSrcEndpoint;

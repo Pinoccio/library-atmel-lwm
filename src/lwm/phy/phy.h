@@ -68,6 +68,7 @@ typedef struct PHY_DataInd_t
   uint8_t    size;
   uint8_t    lqi;
   int8_t     rssi;
+  uint32_t   timestamp;
 } PHY_DataInd_t;
 
 enum
