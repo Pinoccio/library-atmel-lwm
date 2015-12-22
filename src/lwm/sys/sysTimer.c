@@ -112,17 +112,20 @@ bool SYS_TimerStarted(SYS_Timer_t *timer)
 void SYS_TimerTaskHandler(void)
 {
   uint32_t elapsed;
-  static uint8_t prev;
-  uint8_t new;
+  static uint16_t prev;
+  uint16_t new;
 
   if (halTimerIrqCount == prev)
     return;
 
   new = halTimerIrqCount;
-  // note that this uint8_t cast is needed since subtraction performs
+  // note that this uint16_t cast is needed since subtraction performs
   // "integral promotion", which convers new and prev to (signed) int,
   // making the result a signed int as well.
-  elapsed = (uint8_t)(new - prev) * HAL_TIMER_INTERVAL;
+
+  // uint16_t means that task handler needs to be called at least once
+  // every ~65 seconds in the case of sleep
+  elapsed = (uint16_t)(new - prev) * HAL_TIMER_INTERVAL;
   prev = new;
 
   while (timers && (timers->timeout <= elapsed))
