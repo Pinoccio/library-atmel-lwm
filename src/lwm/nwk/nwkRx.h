@@ -78,6 +78,7 @@ typedef struct NWK_DataInd_t
   uint8_t      size;
   uint8_t      lqi;
   int8_t       rssi;
+  uint32_t     timestamp;
 } NWK_DataInd_t;
 
 /*- Prototypes -------------------------------------------------------------*/

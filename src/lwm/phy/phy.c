@@ -311,6 +311,11 @@ void PHY_TaskHandler(void)
     for (uint8_t i = 0; i < size + 1/*lqi*/; i++)
       phyRxBuffer[i] = TRX_FRAME_BUFFER(i);
 
+    ind.timestamp = SCTSRLL;
+    ind.timestamp |= (uint32_t)SCTSRLH << 8;
+    ind.timestamp |= (uint32_t)SCTSRHL << 16;
+    ind.timestamp |= (uint32_t)SCTSRHH << 24;
+
     ind.data = phyRxBuffer;
     ind.size = size - PHY_CRC_SIZE;
     ind.lqi  = phyRxBuffer[size];
